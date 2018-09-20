@@ -3,7 +3,10 @@ console.log("launching node app....");
 var express = require("express");
 var bodyParser = require("body-parser");
 var path = require('path');
-var expressValidator = require('express-validator')
+var expressValidator = require('express-validator');
+var mongojs = require('mongojs')
+var db = mongojs('laptimesApp', ['users'])
+var ObjectId = mongojs.ObjectId
 
 
 var app = express();
@@ -54,23 +57,15 @@ app.use(expressValidator({
 }));
 
 
-var users = [
-    {
-        first_name: 'John',
-        last_name: 'Doe',
-        lap_time:'yes@gmail.com',
-    },
-    {
-        first_name: 'Jill',
-        last_name: 'tot',
-        lap_time:'no@gmail.com',
-    }
-]
+
 
 app.get('/', function(req, res){
-    res.render('index',{
-        title : "recordHolders",
-        users: users
+    db.users.find(function (err, docs) {
+        console.log(docs);
+        res.render('index',{
+            title : "recordHolders",
+            users: docs
+        });
     });
 
 });
@@ -96,15 +91,24 @@ app.post("/users/add", function(req, res){
             last_name: req.body.last_name,
             lap_time: req.body.lap_time
         }
-        console.log("New user has been added");
+        db.users.insert(newUser, function(err, result){
+            if(err){
+                console.log(err);
+            }
+            res.redirect('/');
+        });
     }
-
-
-    
 });
 
-
-
+app.delete('/users/delete/:id',function(req, res){
+    db.users.remove({_id: ObjectId(req.params.id)},function(err, result){
+       console.log(req.params.id);
+        if(err){
+            conosle.log(err);
+        }
+        res.redirect('/');
+    })
+});
 app.listen(3000, function(){
     console.log('Server Started on port 3000..');
 });
